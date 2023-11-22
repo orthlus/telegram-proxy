@@ -26,22 +26,17 @@ public class WebhookRegisterService {
 			.target(TelegramApiHttp.class, BASE_URL);
 
 	public Set<Bot> registerWebhooksForBotsWithoutSecret(Set<Bot> bots) {
-		Set<Bot> botsWithSecrets = new HashSet<>();
+		Set<Bot> botsWithNewSecrets = new HashSet<>();
 
 		for (Bot bot : bots) {
-			Bot botWithSecret;
-
-			if (bot.hasSecret()) {
-				botWithSecret = bot;
-			} else {
-				botWithSecret = bot.withSecret(randomUUID());
+			if (!bot.hasSecret()) {
+				Bot botWithSecret = bot.withSecret(randomUUID());
 				registerWebhook(botWithSecret);
+				botsWithNewSecrets.add(botWithSecret);
 			}
-
-			botsWithSecrets.add(botWithSecret);
 		}
 
-		return botsWithSecrets;
+		return botsWithNewSecrets;
 	}
 
 	private void registerWebhook(Bot bot) {
