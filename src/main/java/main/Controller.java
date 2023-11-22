@@ -1,6 +1,5 @@
 package main;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,38 +8,27 @@ import org.springframework.web.bind.annotation.*;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @RestController
 @RequestMapping("/telegram")
 @RequiredArgsConstructor
-public class TelegramController {
-	private final TelegramBotsRepository repo;
-	private final List<BotConfig> bots;
-	private final TelegramBotsService telegramBotsService;
-	private final Map<String, String> secrets = new ConcurrentHashMap<>();
-
-	@PostConstruct
-	private void init() {
-		secrets.putAll(repo.getSecretsMap());
-	}
+public class Controller {
+	private final BotsConfigsStorage botsConfigsStorage;
+	private final BotsService botsService;
 
 	@PostMapping("{requestPath}")
 	public ResponseEntity<BotApiMethod<?>> update(@RequestBody Update update,
 												  HttpServletRequest request,
 												  @PathVariable String requestPath) {
-		for (BotConfig bot : bots) {
-			String nickname = bot.getNickname();
+		for (Bot bot : botsConfigsStorage.getBots()) {
+			String nickname = bot.nickname();
 
 			if (nickname.equals(requestPath)) {
 				validSecret(request, requestPath);
 
-				BotApiMethod<?> r = telegramBotsService.request(bot, update);
+				BotApiMethod<?> r = botsService.request(bot, update);
 				return ResponseEntity.ok(r);
 			}
 		}
@@ -52,7 +40,7 @@ public class TelegramController {
 	private void validSecret(HttpServletRequest request, String nickname) {
 		try {
 			String secret = getSecret(request);
-			String botStoredSecret = secrets.get(nickname);
+			String botStoredSecret = botsConfigsStorage.secretByNickname(nickname);
 
 			if (botStoredSecret == null) {
 				log.error("failed validate telegram secret - secret not stored for bot {}", nickname);
