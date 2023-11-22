@@ -29,7 +29,9 @@ public class BotsConfigsStorage {
 
 	public void updateFromDb() {
 		bots = repo.getBots();
-		secretsByNickname = bots.stream().collect(toMap(Bot::nickname, Bot::secret, (a, b) -> b));
+		secretsByNickname = bots.stream()
+				.filter(Bot::hasSecret)
+				.collect(toMap(Bot::nickname, Bot::secret, (a, b) -> b));
 	}
 
 	public String secretByNickname(String nickname) {
