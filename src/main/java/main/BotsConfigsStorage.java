@@ -22,8 +22,8 @@ public class BotsConfigsStorage {
 	@PostConstruct
 	private void init() {
 		updateFromDb();
-		Set<Bot> registeredBots = webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
-		registeredBots.forEach(bot -> repo.saveSecret(bot.nickname(), bot.secret()));
+		Set<Bot> allRegisteredBots = webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
+		allRegisteredBots.forEach(bot -> repo.saveSecret(bot.nickname(), bot.secret()));
 		updateFromDb();
 	}
 
