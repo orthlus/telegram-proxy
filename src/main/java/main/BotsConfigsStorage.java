@@ -5,11 +5,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mapstruct.factory.Mappers.getMapper;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 @RequiredArgsConstructor
@@ -18,17 +17,19 @@ public class BotsConfigsStorage {
 	private Set<Bot> bots;
 	private Map<String, String> secretsByNickname;
 	private final BotsRepository repo;
+	private final WebhookRegisterService webhookRegisterService;
 
 	@PostConstruct
 	private void init() {
-		Set<BotDto> repoBots = repo.getBots();
+		updateFromDb();
+		Set<Bot> registeredBots = webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
+		registeredBots.forEach(bot -> repo.saveSecret(bot.nickname(), bot.secret()));
+		updateFromDb();
+	}
 
-		bots = getMapper(BotsMapper.class).map(repoBots);
-
-		secretsByNickname = new HashMap<>();
-		for (Bot bot : bots) {
-			secretsByNickname.put(bot.nickname(), bot.secret());
-		}
+	public void updateFromDb() {
+		bots = repo.getBots();
+		secretsByNickname = bots.stream().collect(toMap(Bot::nickname, Bot::secret, (a, b) -> b));
 	}
 
 	public String secretByNickname(String nickname) {
