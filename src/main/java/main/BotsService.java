@@ -21,6 +21,8 @@ import static java.net.URI.create;
 public class BotsService {
 	@Value("${telegram.admin.id}")
 	private long adminId;
+	private final String botCommandForUpdateWebhook = "/update_webhooks";
+
 	private final TelegramServiceHttp telegramServiceHttp = Feign.builder()
 			.encoder(new JacksonEncoder())
 			.decoder(this::decodeTelegramTypes)
@@ -46,6 +48,15 @@ public class BotsService {
 		}
 
 		return null;
+	}
+
+	public boolean updateHasUpdateWebhookCommand(Update update) {
+		return isAdmin(update) &&
+				update.hasMessage() &&
+				update.getMessage().hasText() &&
+				update.getMessage()
+						.getText()
+						.equals(botCommandForUpdateWebhook);
 	}
 
 	private boolean isAdmin(Update update) {

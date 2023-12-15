@@ -28,8 +28,16 @@ public class Controller {
 			if (nickname.equals(requestPath)) {
 				validSecret(request, requestPath);
 
-				BotApiMethod<?> r = botsService.request(bot, update);
-				return ResponseEntity.ok(r);
+				boolean isBotCanUpdateWebhook = botsConfigsStorage.isBotCanUpdateWebhook(nickname);
+				boolean updateHasUpdateWebhookCommand = botsService.updateHasUpdateWebhookCommand(update);
+
+				if (isBotCanUpdateWebhook && updateHasUpdateWebhookCommand) {
+					botsConfigsStorage.updateWebhooksAndStorage();
+					return ResponseEntity.ok(null);
+				} else {
+					BotApiMethod<?> r = botsService.request(bot, update);
+					return ResponseEntity.ok(r);
+				}
 			}
 		}
 

@@ -16,11 +16,16 @@ public class BotsConfigsStorage {
 	@Getter
 	private Set<Bot> bots;
 	private Map<String, String> secretsByNickname;
+	private Set<String> botsCanUpdateWebhook;
 	private final BotsRepository repo;
 	private final WebhookRegisterService webhookRegisterService;
 
 	@PostConstruct
 	private void init() {
+		updateWebhooksAndStorage();
+	}
+
+	public void updateWebhooksAndStorage() {
 		loadBots();
 		webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
 		loadBots();
@@ -31,6 +36,11 @@ public class BotsConfigsStorage {
 		secretsByNickname = bots.stream()
 				.filter(Bot::hasSecret)
 				.collect(toMap(Bot::nickname, Bot::secret, (a, b) -> b));
+		botsCanUpdateWebhook = repo.getBotsCanUpdateWebhook();
+	}
+
+	public boolean isBotCanUpdateWebhook(String nickname) {
+		return botsCanUpdateWebhook.contains(nickname);
 	}
 
 	public String secretByNickname(String nickname) {
