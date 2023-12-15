@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
-import static main.Tables.TELEGRAM_BOTS_INFO;
-import static main.Tables.TELEGRAM_BOTS_SECRETS;
+import static main.Tables.*;
 import static org.jooq.Records.mapping;
 
 @Slf4j
@@ -26,6 +25,10 @@ public class BotsRepository {
 				.from(tbi)
 				.leftJoin(tbs).on(tbi.NICKNAME.eq(tbs.NICKNAME))
 				.fetchSet(mapping(Bot::new));
+	}
+
+	public void saveSecret(Bot bot) {
+		saveSecret(bot.nickname(), bot.secret());
 	}
 
 	public void saveSecret(String nickname, String secret) {

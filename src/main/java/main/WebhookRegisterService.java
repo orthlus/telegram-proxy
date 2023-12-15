@@ -8,11 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toSet;
 import static org.telegram.telegrambots.meta.ApiConstants.BASE_URL;
 
 @Slf4j
@@ -21,22 +21,19 @@ import static org.telegram.telegrambots.meta.ApiConstants.BASE_URL;
 public class WebhookRegisterService {
 	@Value("${telegram.handler.external.domain}")
 	private String telegramHandlerExternalDomain;
+	private final BotsRepository repo;
 	private final TelegramApiHttp client = Feign.builder()
 			.encoder(new FormEncoder())
 			.target(TelegramApiHttp.class, BASE_URL);
 
-	public Set<Bot> registerWebhooksForBotsWithoutSecret(Set<Bot> bots) {
-		Set<Bot> botsWithNewSecrets = new HashSet<>();
+	public void registerWebhooksForBotsWithoutSecret(Set<Bot> bots) {
+		Set<Bot> botsWithNewSecret = bots.stream()
+				.filter(Bot::hasNoSecret)
+				.map(bot -> bot.withSecret(randomUUID().toString()))
+				.collect(toSet());
 
-		for (Bot bot : bots) {
-			if (!bot.hasSecret()) {
-				Bot botWithSecret = bot.withSecret(randomUUID());
-				registerWebhook(botWithSecret);
-				botsWithNewSecrets.add(botWithSecret);
-			}
-		}
-
-		return botsWithNewSecrets;
+		botsWithNewSecret.forEach(this::registerWebhook);
+		botsWithNewSecret.forEach(repo::saveSecret);
 	}
 
 	private void registerWebhook(Bot bot) {

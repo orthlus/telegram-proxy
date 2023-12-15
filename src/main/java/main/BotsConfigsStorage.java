@@ -21,13 +21,12 @@ public class BotsConfigsStorage {
 
 	@PostConstruct
 	private void init() {
-		updateFromDb();
-		Set<Bot> newRegisteredBots = webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
-		newRegisteredBots.forEach(bot -> repo.saveSecret(bot.nickname(), bot.secret()));
-		updateFromDb();
+		loadBots();
+		webhookRegisterService.registerWebhooksForBotsWithoutSecret(bots);
+		loadBots();
 	}
 
-	public void updateFromDb() {
+	public void loadBots() {
 		bots = repo.getBots();
 		secretsByNickname = bots.stream()
 				.filter(Bot::hasSecret)
