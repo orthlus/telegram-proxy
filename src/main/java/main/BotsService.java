@@ -5,6 +5,7 @@ import feign.Response;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -17,6 +18,7 @@ import java.lang.reflect.Type;
 
 import static java.net.URI.create;
 
+@Slf4j
 @Component
 public class BotsService {
 	@Value("${telegram.admin.id}")
@@ -44,7 +46,11 @@ public class BotsService {
 		if (isAdmin(update)) {
 			String url = bot.serviceUrl() + bot.handlerUrlPath();
 
-			return telegramServiceHttp.send(create(url), update);
+			try {
+				return telegramServiceHttp.send(create(url), update);
+			} catch (Exception e) {
+				log.error("bot {} request error", bot.nickname());
+			}
 		}
 
 		return null;
